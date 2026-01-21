@@ -1,0 +1,206 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom, #87ceeb 0%, #98d8e8 50%, #6fa287 50%, #5a8a6f 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+#game-container {
+    position: relative;
+    width: 810px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+/* Top Bar */
+#top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: linear-gradient(to bottom, #8b6914, #6b4e0e);
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+#sun-counter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 15px;
+    border-radius: 20px;
+}
+
+.sun-icon {
+    font-size: 24px;
+}
+
+#wave-counter {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 15px;
+    border-radius: 20px;
+}
+
+/* Card Bar */
+#card-bar {
+    display: flex;
+    gap: 10px;
+    padding: 10px 20px;
+    background: linear-gradient(to bottom, #6b4e0e, #4a3309);
+    border-bottom: 2px solid #3a2507;
+}
+
+.plant-card {
+    position: relative;
+    width: 80px;
+    height: 100px;
+    background: linear-gradient(to bottom, #e8d4a0, #c9b388);
+    border: 3px solid #8b6914;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.plant-card:hover:not(.disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.plant-card.selected {
+    border-color: #ffeb3b;
+    box-shadow: 0 0 15px #ffeb3b;
+    transform: translateY(-5px);
+}
+
+.plant-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(50%);
+}
+
+.card-icon {
+    font-size: 36px;
+    line-height: 1;
+}
+
+.card-name {
+    font-size: 11px;
+    font-weight: bold;
+    color: #3a2507;
+    text-align: center;
+}
+
+.card-cost {
+    font-size: 14px;
+    font-weight: bold;
+    color: #6b4e0e;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.card-cooldown {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 5px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.card-cooldown.active {
+    display: flex;
+}
+
+.plant-card.shovel {
+    background: linear-gradient(to bottom, #b0b0b0, #808080);
+}
+
+/* Canvas */
+#game-canvas {
+    display: block;
+    background: linear-gradient(to bottom, #7cb342 0%, #689f38 100%);
+}
+
+/* Game Over Layer */
+#game-over-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+#game-over-layer.hidden {
+    display: none;
+}
+
+#game-over-content {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+#game-over-title {
+    font-size: 48px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+#game-over-message {
+    font-size: 20px;
+    margin-bottom: 30px;
+    color: #666;
+}
+
+#restart-button {
+    font-size: 20px;
+    padding: 15px 40px;
+    background: linear-gradient(to bottom, #4caf50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.1s;
+}
+
+#restart-button:hover {
+    transform: scale(1.05);
+}
+
+#restart-button:active {
+    transform: scale(0.98);
+}

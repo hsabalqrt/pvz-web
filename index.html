@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plants vs Zombies Web</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Top Bar -->
+        <div id="top-bar">
+            <div id="sun-counter">
+                <span class="sun-icon">☀</span>
+                <span id="sun-value">100</span>
+            </div>
+            <div id="wave-counter">
+                Wave: <span id="wave-value">1</span>/4
+            </div>
+        </div>
+
+        <!-- Plant Cards -->
+        <div id="card-bar">
+            <div class="plant-card" data-plant="sunflower" data-cost="50" data-cooldown="7">
+                <div class="card-icon">🌻</div>
+                <div class="card-name">Sunflower</div>
+                <div class="card-cost">50</div>
+                <div class="card-cooldown"></div>
+            </div>
+            <div class="plant-card" data-plant="peashooter" data-cost="100" data-cooldown="5">
+                <div class="card-icon">🌱</div>
+                <div class="card-name">Peashooter</div>
+                <div class="card-cost">100</div>
+                <div class="card-cooldown"></div>
+            </div>
+            <div class="plant-card" data-plant="wallnut" data-cost="50" data-cooldown="8">
+                <div class="card-icon">🥜</div>
+                <div class="card-name">Wall-nut</div>
+                <div class="card-cost">50</div>
+                <div class="card-cooldown"></div>
+            </div>
+            <div class="plant-card shovel" id="shovel-card">
+                <div class="card-icon">🔨</div>
+                <div class="card-name">Shovel</div>
+            </div>
+        </div>
+
+        <!-- Game Canvas -->
+        <canvas id="game-canvas" width="810" height="450"></canvas>
+
+        <!-- Game Over Layer -->
+        <div id="game-over-layer" class="hidden">
+            <div id="game-over-content">
+                <h1 id="game-over-title"></h1>
+                <p id="game-over-message"></p>
+                <button id="restart-button">إعادة التشغيل</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
