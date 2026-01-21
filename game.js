@@ -12,12 +12,15 @@ const gameState = {
     plants: [], // {row, col, type, health, lastAction, ...}
     zombies: [], // {row, x, health, eating, ...}
     projectiles: [], // {row, x, damage, ...}
+    sunDrops: [], // clickable suns falling on the lawn
+    mowers: [], // lawn mowers per row
     cardCooldowns: {}, // {plantType: timeLeft}
     currentWave: 1,
     waveInProgress: false,
     gameOver: false,
     gameWon: false,
     lastSunDrop: Date.now(),
+    nextRandomSunDrop: Date.now() + 7000,
     zombiesSpawned: 0,
     totalZombiesToSpawn: 0
 };
@@ -192,11 +195,12 @@ class Peashooter extends Plant {
     }
 
     shoot() {
-        gameState.projectiles.push({
-            row: this.row,
-            x: this.getX() + 35,
-            damage: PLANT_TYPES.peashooter.damage
-        });
+        // Use the Projectile class so update() exists
+        gameState.projectiles.push(new Projectile(
+            this.row,
+            this.getX() + 35,
+            PLANT_TYPES.peashooter.damage
+        ));
     }
 }
 
@@ -225,10 +229,17 @@ class Zombie {
         if (!this.eating) {
             this.x -= this.speed;
 
-            // Check if reached the house
-            if (this.x < 0) {
-                gameOver(false);
-                return;
+            // Check if reached lawn mower / house edge
+            if (this.x < 20) {
+                const mower = gameState.mowers[this.row];
+                if (mower && !mower.active) {
+                    mower.trigger();
+                    // Small nudge so zombie gets hit by mower immediately
+                    this.x = 25;
+                } else if (!mower || (mower && mower.completed)) {
+                    gameOver(false);
+                    return;
+                }
             }
 
             // Check collision with plants
@@ -337,6 +348,125 @@ class Projectile {
         ctx.strokeStyle = '#558b2f';
         ctx.lineWidth = 2;
         ctx.stroke();
+    }
+}
+
+// ========== Sun Drop Class ==========
+class SunDrop {
+    constructor(x) {
+        this.x = x;
+        this.y = 0;
+        this.radius = 14;
+        this.value = 25;
+        this.fallSpeed = 0.4;
+        this.targetY = 80 + Math.random() * (canvas.height - 120);
+        this.spawnTime = Date.now();
+        this.lifeTime = 8000; // disappears after 8s if not collected
+        this.collected = false;
+    }
+
+    update() {
+        if (this.collected) return true;
+
+        // fall until targetY
+        if (this.y < this.targetY) {
+            this.y += this.fallSpeed * (1 + Math.sin(Date.now() / 300) * 0.2);
+        }
+
+        // timeout removal
+        if (Date.now() - this.spawnTime > this.lifeTime) {
+            return true;
+        }
+        return false;
+    }
+
+    draw() {
+        ctx.save();
+        // glow
+        const grd = ctx.createRadialGradient(this.x, this.y, 4, this.x, this.y, 18);
+        grd.addColorStop(0, '#fff59d');
+        grd.addColorStop(1, 'rgba(255, 235, 59, 0.2)');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 18, 0, Math.PI * 2);
+        ctx.fill();
+
+        // core
+        ctx.fillStyle = '#ffeb3b';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // icon
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#795548';
+        ctx.fillText('☀', this.x, this.y);
+        ctx.restore();
+    }
+
+    containsPoint(px, py) {
+        const dx = px - this.x;
+        const dy = py - this.y;
+        return Math.sqrt(dx * dx + dy * dy) <= this.radius + 4;
+    }
+}
+
+// ========== Lawn Mower Class ==========
+class LawnMower {
+    constructor(row) {
+        this.row = row;
+        this.x = 18;
+        this.y = row * CELL_HEIGHT + CELL_HEIGHT / 2;
+        this.active = false;
+        this.completed = false;
+        this.speed = 6;
+    }
+
+    trigger() {
+        if (!this.active && !this.completed) {
+            this.active = true;
+        }
+    }
+
+    update() {
+        if (!this.active || this.completed) return;
+        this.x += this.speed;
+
+        // mow zombies in the row
+        for (let i = gameState.zombies.length - 1; i >= 0; i--) {
+            const z = gameState.zombies[i];
+            if (z.row === this.row && Math.abs(z.x - this.x) < 30) {
+                gameState.zombies.splice(i, 1);
+            }
+        }
+
+        if (this.x > canvas.width + 40) {
+            this.completed = true;
+            this.active = false;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        // body
+        ctx.fillStyle = this.active ? '#c62828' : '#546e7a';
+        ctx.fillRect(this.x - 18, this.y - 12, 36, 24);
+        // wheels
+        ctx.fillStyle = '#263238';
+        ctx.beginPath();
+        ctx.arc(this.x - 12, this.y + 12, 6, 0, Math.PI * 2);
+        ctx.arc(this.x + 12, this.y + 12, 6, 0, Math.PI * 2);
+        ctx.fill();
+        // handle
+        ctx.strokeStyle = '#37474f';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(this.x + 18, this.y - 12);
+        ctx.lineTo(this.x + 28, this.y - 26);
+        ctx.stroke();
+        ctx.restore();
     }
 }
 
@@ -475,6 +605,18 @@ canvas.addEventListener('click', (e) => {
     
     if (row < 0 || row >= GRID_ROWS || col < 0 || col >= GRID_COLS) return;
 
+    // First, check clickable suns
+    for (let i = gameState.sunDrops.length - 1; i >= 0; i--) {
+        const s = gameState.sunDrops[i];
+        if (s.containsPoint(x, y)) {
+            s.collected = true;
+            gameState.sun += s.value;
+            gameState.sunDrops.splice(i, 1);
+            updateSunDisplay();
+            return;
+        }
+    }
+
     if (gameState.shovelMode) {
         // Remove plant
         const plant = grid.getPlant(row, col);
@@ -601,6 +743,13 @@ function update() {
         gameState.lastSunDrop = now;
     }
 
+    // Random falling sun drops
+    if (now >= gameState.nextRandomSunDrop) {
+        const x = 60 + Math.random() * (canvas.width - 120);
+        gameState.sunDrops.push(new SunDrop(x));
+        gameState.nextRandomSunDrop = now + (7000 + Math.random() * 5000);
+    }
+
     // Update plants
     gameState.plants.forEach(plant => {
         if (plant.update) {
@@ -621,6 +770,15 @@ function update() {
             gameState.projectiles.splice(i, 1);
         }
     }
+
+    // Update sun drops
+    for (let i = gameState.sunDrops.length - 1; i >= 0; i--) {
+        const remove = gameState.sunDrops[i].update();
+        if (remove) gameState.sunDrops.splice(i, 1);
+    }
+
+    // Update lawn mowers
+    gameState.mowers.forEach(m => m.update());
 
     // Update wave manager
     waveManager.update();
@@ -650,6 +808,12 @@ function draw() {
     gameState.zombies.forEach(zombie => {
         zombie.draw();
     });
+
+    // Draw sun drops
+    gameState.sunDrops.forEach(s => s.draw());
+
+    // Draw lawn mowers
+    gameState.mowers.forEach(m => m.draw());
 }
 
 function gameLoop() {
@@ -664,6 +828,9 @@ function init() {
     updateWaveDisplay();
     updateCardStates();
     
+    // Create lawn mowers per row
+    gameState.mowers = Array(GRID_ROWS).fill(null).map((_, r) => new LawnMower(r));
+
     // Start first wave after 3 seconds
     setTimeout(() => {
         waveManager.startWave(1);
